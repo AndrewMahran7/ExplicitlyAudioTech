@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: explicitly
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements-prod.txt
+    startCommand: gunicorn -c gunicorn_config.py "explicitly.web:app"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+    disk:
+      name: explicitly-data
+      mountPath: /app/data
+      sizeGB: 10

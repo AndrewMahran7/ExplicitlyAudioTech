@@ -1,0 +1,47 @@
+# Build outputs
+desktop/build/
+desktop/Build/
+*.exe
+*.dll
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+
+# Models (too large for git)
+desktop/Models/*.bin
+Models/*.bin
+
+# Python
+website/__pycache__/
+website/env/
+website/data/uploads/
+website/data/output/
+website/data/stems/
+website/data/work/
+website/data/logs/
+website/data/input/*.mp3
+website/*.mp3
+*.pyc
+*.pyo
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Temp
+*.log
+*.tmp
+*.bak

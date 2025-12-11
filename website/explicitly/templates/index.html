@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explicitly - Clean Audio Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6049273265076763"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 Explicitly</h1>
+            <p class="subtitle">AI-Powered Profanity Removal for Audio Files</p>
+        </header>
+
+        <main>
+            <!-- Upload Section -->
+            <section id="uploadSection" class="card">
+                <h2>Upload Your Audio</h2>
+                <p class="help-text">Upload a file or paste a YouTube URL</p>
+                
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <!-- Input Type Selection -->
+                    <div class="form-group">
+                        <label>Input Source</label>
+                        <div class="input-type-options">
+                            <div class="input-type-option">
+                                <input type="radio" id="input_file" name="input_type" value="file" checked>
+                                <label for="input_file">
+                                    <span class="input-type-name">📁 Upload File</span>
+                                </label>
+                            </div>
+                            <div class="input-type-option" style="opacity: 0.5;">
+                                <input type="radio" id="input_youtube" name="input_type" value="youtube" disabled>
+                                <label for="input_youtube" style="cursor: not-allowed;">
+                                    <span class="input-type-name">🎥 YouTube URL (Coming Soon)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Upload -->
+                    <div class="form-group" id="fileUploadGroup">
+                        <label for="fileInput" class="file-label">
+                            <span class="file-icon">📁</span>
+                            <span id="fileName">Choose an audio file...</span>
+                        </label>
+                        <input type="file" id="fileInput" name="file" accept=".mp3,.wav,.flac,.ogg,.m4a,.aac">
+                        <p class="help-text">Supported: MP3, WAV, FLAC, OGG, M4A, AAC (Max 100MB)</p>
+                    </div>
+
+                    <!-- YouTube URL -->
+                    <div class="form-group" id="youtubeUrlGroup" style="display: none;">
+                        <label for="youtubeUrl">YouTube URL</label>
+                        <input type="text" id="youtubeUrl" name="youtube_url" placeholder="https://www.youtube.com/watch?v=..." class="url-input">
+                        <p class="help-text">Paste a YouTube video URL to download and process</p>
+                    </div>
+
+                    <!-- Optional Lyrics -->
+                    <div class="form-group">
+                        <label for="lyricsInput">Lyrics (Optional - Improves Accuracy)</label>
+                        
+                        <!-- Lyrics Search -->
+                        <div class="lyrics-search">
+                            <div class="search-container">
+                                <input type="text" id="searchInput" placeholder="🔍 Search for song... (e.g., 'Crazy Story King Von')" class="search-input" autocomplete="off">
+                                <div id="searchResults" class="search-results"></div>
+                            </div>
+                            <p class="lyrics-status" id="lyricsStatus"></p>
+                        </div>
+                        
+                        <textarea id="lyricsInput" name="lyrics" rows="6" placeholder="Paste song lyrics here to improve transcription accuracy...&#10;&#10;Or search for a song above to auto-fetch lyrics" class="lyrics-textarea"></textarea>
+                        <p class="help-text">Providing lyrics helps correct transcription errors and catch all profanity</p>
+                    </div>
+
+                    <!-- Model Selection -->
+                    <div class="form-group">
+                        <label>Processing Model</label>
+                        <div class="model-options">
+                            {% for key, model in models.items() %}
+                            <div class="model-option">
+                                <input type="radio" id="model_{{ key }}" name="model" value="{{ key }}" 
+                                       {% if key == 'balanced' %}checked{% endif %}>
+                                <label for="model_{{ key }}">
+                                    <span class="model-name">{{ key.title() }}</span>
+                                    <span class="model-desc">{{ model.description }}</span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Censoring Method -->
+                    <div class="form-group">
+                        <label>Censoring Method</label>
+                        <div class="method-options">
+                            <div class="method-option">
+                                <input type="radio" id="method_mute" name="method" value="mute">
+                                <label for="method_mute">
+                                    <span class="method-name">🔇 Mute</span>
+                                    <span class="method-desc">Silent gaps</span>
+                                </label>
+                            </div>
+                            <div class="method-option">
+                                <input type="radio" id="method_bleep" name="method" value="bleep">
+                                <label for="method_bleep">
+                                    <span class="method-name">📢 Bleep</span>
+                                    <span class="method-desc">Beep sound</span>
+                                </label>
+                            </div>
+                            <div class="method-option">
+                                <input type="radio" id="method_reverse" name="method" value="reverse" checked>
+                                <label for="method_reverse">
+                                    <span class="method-name">🔄 Reverse</span>
+                                    <span class="method-desc">Backward audio</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Device Selection -->
+                    <div class="form-group">
+                        <label>Processing Device</label>
+                        <div class="device-options">
+                            <div class="device-option">
+                                <input type="radio" id="device_auto" name="device" value="auto" checked>
+                                <label for="device_auto">
+                                    <span class="device-name">⚡ Auto (GPU if available)</span>
+                                    <span class="device-desc">Best performance - 5-10x faster with GPU</span>
+                                </label>
+                            </div>
+                            <div class="device-option">
+                                <input type="radio" id="device_cpu" name="device" value="cpu">
+                                <label for="device_cpu">
+                                    <span class="device-name">CPU Only</span>
+                                    <span class="device-desc">Force CPU (slower but always works)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <span class="btn-text">🚀 Start Processing</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Processing Section -->
+            <section id="processingSection" class="card" style="display: none;">
+                <h2>Processing Your Audio</h2>
+                <div class="processing-info">
+                    <p class="filename" id="processingFilename"></p>
+                    <p class="status-text" id="statusText">Initializing...</p>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+
+                <div class="processing-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Model:</span>
+                        <span class="detail-value" id="processingModel"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Method:</span>
+                        <span class="detail-value" id="processingMethod"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Device:</span>
+                        <span class="detail-value" id="processingDevice"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="card" style="display: none;">
+                <h2>✅ Processing Complete!</h2>
+                
+                <div class="results-summary">
+                    <div class="summary-item">
+                        <div class="summary-label">Profane Words Detected</div>
+                        <div class="summary-value" id="profaneCount">0</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Processing Time</div>
+                        <div class="summary-value" id="processingTime">--</div>
+                    </div>
+                </div>
+
+                <div class="download-buttons">
+                    <a href="#" id="downloadAudio" class="btn btn-success">
+                        <span class="btn-text">⬇️ Download Clean Audio</span>
+                    </a>
+                    <a href="#" id="downloadReport" class="btn btn-secondary">
+                        <span class="btn-text">📄 Download Report</span>
+                    </a>
+                </div>
+
+                <button class="btn btn-primary" id="processAnotherBtn">
+                    <span class="btn-text">🔄 Process Another File</span>
+                </button>
+            </section>
+
+            <!-- Error Section -->
+            <section id="errorSection" class="card error-card" style="display: none;">
+                <h2>❌ Processing Failed</h2>
+                <p class="error-message" id="errorMessage"></p>
+                <button class="btn btn-primary" id="tryAgainBtn">
+                    <span class="btn-text">🔄 Try Again</span>
+                </button>
+            </section>
+        </main>
+
+        <footer>
+            <p>Powered by Whisper AI, Demucs, and advanced audio processing</p>
+            <p class="version">Explicitly v1.0</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

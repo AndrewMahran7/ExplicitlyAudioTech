@@ -1,0 +1,15 @@
+# Production requirements (includes base requirements.txt)
+-r requirements.txt
+
+# Production web server
+gunicorn==21.2.0
+
+# AWS integration (optional)
+boto3==1.34.0
+botocore==1.34.0
+
+# Monitoring
+psutil==5.9.6
+
+# Environment management
+python-dotenv==1.0.0

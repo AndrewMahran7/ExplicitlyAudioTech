@@ -1,0 +1,27 @@
+# Audio processing settings
+fade_ms: 50                    # Fade duration for muting (milliseconds)
+pre_margin_ms: 100             # Extra silence before profane word (milliseconds)
+post_margin_ms: 100            # Extra silence after profane word (milliseconds)
+
+# Demucs settings
+demucs_model: "htdemucs"       # Model for stem separation
+demucs_device: "auto"          # Device for Demucs (auto/cpu/cuda)
+
+# Whisper settings
+whisper_model: "base.en"       # Whisper model size
+whisper_device: "auto"         # Device for Whisper (auto/cpu/cuda)
+whisper_batch_size: 16         # Batch size for Whisper processing
+
+# Audio processing
+target_sample_rate: 16000      # Sample rate for ASR processing
+mono: true                     # Convert to mono for ASR
+
+# Profanity detection
+profanity_threshold: 0.8       # Confidence threshold for profanity detection
+normalize_text: true           # Normalize text (sh*t → shit, etc.)
+case_sensitive: false          # Case sensitive matching
+
+# Output settings
+output_format: "wav"           # Output audio format (wav works better than mp3)
+output_bitrate: "320k"         # Output bitrate for MP3
+preserve_original: true        # Keep original file timestamps

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Explicitly Web Interface - Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 { color: #6366f1; }
+        h2 { color: #4f46e5; margin-top: 30px; }
+        .feature { 
+            background: #f0f0f0; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px;
+        }
+        .command {
+            background: #1e293b;
+            color: #f1f5f9;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .step {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Explicitly Web Interface</h1>
+    <p><strong>AI-Powered Profanity Removal for Audio Files</strong></p>
+
+    <h2>🚀 Getting Started</h2>
+    <div class="step">
+        <h3>Step 1: Start the Server</h3>
+        <p>Open PowerShell/Command Prompt and run:</p>
+        <div class="command">python -m explicitly web</div>
+        <p>Or use the run script:</p>
+        <div class="command">python run_web.py</div>
+    </div>
+
+    <div class="step">
+        <h3>Step 2: Open Your Browser</h3>
+        <p>Navigate to:</p>
+        <div class="command">http://localhost:5000</div>
+    </div>
+
+    <div class="step">
+        <h3>Step 3: Upload Your File</h3>
+        <p>Click to browse or drag & drop your audio file (MP3, WAV, FLAC, etc.)</p>
+    </div>
+
+    <div class="step">
+        <h3>Step 4: Choose Your Settings</h3>
+        <ul>
+            <li><strong>Model</strong>: Select between Speed, Balanced, or Accuracy</li>
+            <li><strong>Method</strong>: Choose Mute, Bleep, or Reverse</li>
+            <li><strong>Device</strong>: Auto-detect or manually select GPU/CPU</li>
+        </ul>
+    </div>
+
+    <div class="step">
+        <h3>Step 5: Process & Download</h3>
+        <p>Click "Start Processing" and wait for completion. Then download your clean audio!</p>
+    </div>
+
+    <h2>✨ Features</h2>
+
+    <div class="feature">
+        <h3>⚡ Model Selection</h3>
+        <ul>
+            <li><strong>Speed</strong>: Fastest processing (tiny.en model)</li>
+            <li><strong>Balanced</strong>: Good balance of speed and accuracy (base.en model)</li>
+            <li><strong>Accuracy</strong>: Best results (large-v2 model)</li>
+        </ul>
+    </div>
+
+    <div class="feature">
+        <h3>🎨 Censoring Methods</h3>
+        <ul>
+            <li><strong>Mute</strong>: Creates silent gaps where profanity is detected</li>
+            <li><strong>Bleep</strong>: Replaces profanity with a beep sound</li>
+            <li><strong>Reverse</strong>: Plays the profane audio backward</li>
+        </ul>
+    </div>
+
+    <div class="feature">
+        <h3>🖥️ Device Options</h3>
+        <ul>
+            <li><strong>Auto</strong>: Automatically detects and uses GPU if available</li>
+            <li><strong>GPU (CUDA)</strong>: Forces GPU processing (requires NVIDIA GPU)</li>
+            <li><strong>CPU</strong>: Uses CPU processing (slower but always compatible)</li>
+        </ul>
+    </div>
+
+    <h2>📊 What You Get</h2>
+    <ul>
+        <li>✅ Clean audio file with profanity removed</li>
+        <li>✅ Detailed JSON report with timestamps of detected profanity</li>
+        <li>✅ Real-time progress tracking during processing</li>
+        <li>✅ Word count and confidence scores</li>
+    </ul>
+
+    <h2>⚙️ System Requirements</h2>
+    <ul>
+        <li>Python 3.8 or higher</li>
+        <li>Required packages: Flask, Whisper, Demucs, PyTorch</li>
+        <li>Optional: NVIDIA GPU with CUDA for faster processing</li>
+        <li>Disk space for temporary files (varies by audio length)</li>
+    </ul>
+
+    <h2>🔧 Advanced Options</h2>
+    <p>Run on a different port:</p>
+    <div class="command">python -m explicitly web --port 8080</div>
+
+    <p>Bind to a specific host:</p>
+    <div class="command">python -m explicitly web --host 127.0.0.1 --port 8080</div>
+
+    <h2>📝 Tips for Best Results</h2>
+    <ul>
+        <li>Use GPU acceleration when possible for 5-10x faster processing</li>
+        <li>Start with "Balanced" model for most use cases</li>
+        <li>Use "Speed" model for quick tests or long files</li>
+        <li>Use "Accuracy" model for important content</li>
+        <li>Keep files under 100MB for smoother uploads</li>
+        <li>Ensure good internet connection if downloading large files</li>
+    </ul>
+
+    <h2>❓ Troubleshooting</h2>
+    <div class="feature">
+        <h4>Server won't start</h4>
+        <p>Port 5000 might be in use. Try a different port:</p>
+        <div class="command">python -m explicitly web --port 8080</div>
+    </div>
+
+    <div class="feature">
+        <h4>Processing is very slow</h4>
+        <ul>
+            <li>Check if GPU is being used (shown at startup)</li>
+            <li>Try the "Speed" model preset</li>
+            <li>Process shorter audio clips</li>
+        </ul>
+    </div>
+
+    <div class="feature">
+        <h4>Upload fails</h4>
+        <ul>
+            <li>Check file size (max 100MB)</li>
+            <li>Verify file format is supported</li>
+            <li>Try converting to MP3 or WAV first</li>
+        </ul>
+    </div>
+
+    <h2>🎓 Example Workflow</h2>
+    <ol>
+        <li>Open terminal and run: <code>python -m explicitly web</code></li>
+        <li>Open browser to <code>http://localhost:5000</code></li>
+        <li>Upload your podcast episode (podcast.mp3)</li>
+        <li>Select "Balanced" model and "Mute" method</li>
+        <li>Click "Start Processing"</li>
+        <li>Wait 2-5 minutes (depends on length and GPU)</li>
+        <li>Download clean version (podcast.clean.wav)</li>
+        <li>Download report to see what was censored</li>
+    </ol>
+
+    <h2>📚 Additional Resources</h2>
+    <ul>
+        <li>See <code>WEB_README.md</code> for detailed documentation</li>
+        <li>See <code>SETUP_WEB.md</code> for setup instructions</li>
+        <li>Use CLI for batch processing: <code>explicitly clean file.mp3</code></li>
+    </ul>
+
+    <hr>
+    <p><em>For command-line usage or automation, use the CLI interface instead of the web UI.</em></p>
+</body>
+</html>
