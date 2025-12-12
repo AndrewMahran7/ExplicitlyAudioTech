@@ -197,6 +197,8 @@ private:
     std::atomic<bool> bufferUnderrun {false};  // Emergency flag: buffer critically low
     std::atomic<bool> playbackStarted {false};  // Track when 10s buffer filled and playback begins
     double lastUnderrunWarningTime = 0.0;      // Throttle warning messages
+    bool wasWaiting = false;                   // Track if we were waiting for Whisper
+    int debugCounter = 0;                      // Counter for periodic logging
     
     // Phase 5: Threading
     std::thread whisperThread;

@@ -17,6 +17,43 @@
 #include <cctype>
 #include <chrono>
 #include <iomanip>
+#include <regex>
+
+// Helper function to clean Whisper transcript text
+static std::string cleanTranscriptText(const std::string& text)
+{
+    std::string cleaned = text;
+    
+    // Remove parenthetical content like "( up beat music )", "(laughs)", etc.
+    cleaned = std::regex_replace(cleaned, std::regex("\\([^)]*\\)"), "");
+    
+    // Fix Unicode quote characters: ΓÖ¬ (U+00C3 U+0096 U+00AC) -> '
+    cleaned = std::regex_replace(cleaned, std::regex("\xC3\x96\xAC"), "'");
+    
+    // Fix other common Unicode issues
+    cleaned = std::regex_replace(cleaned, std::regex("\xE2\x80\x98"), "'");  // Left single quote
+    cleaned = std::regex_replace(cleaned, std::regex("\xE2\x80\x99"), "'");  // Right single quote
+    cleaned = std::regex_replace(cleaned, std::regex("\xE2\x80\x9C"), "\""); // Left double quote
+    cleaned = std::regex_replace(cleaned, std::regex("\xE2\x80\x9D"), "\""); // Right double quote
+    
+    // Remove any remaining non-alphanumeric characters (except apostrophes and hyphens for contractions/compound words)
+    // Keep: letters, numbers, apostrophes, hyphens, spaces
+    std::string filtered;
+    for (char c : cleaned)
+    {
+        if (std::isalnum(static_cast<unsigned char>(c)) || c == '\'' || c == '-' || c == ' ')
+        {
+            filtered += c;
+        }
+    }
+    cleaned = filtered;
+    
+    // Trim whitespace
+    cleaned.erase(0, cleaned.find_first_not_of(" \t\n\r"));
+    cleaned.erase(cleaned.find_last_not_of(" \t\n\r") + 1);
+    
+    return cleaned;
+}
 
 AudioEngine::AudioEngine()
 {
@@ -277,6 +314,8 @@ void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice* device)
     transcriptionInterval = 0;
     streamTime = 0.0;
     playbackStarted = false;  // Track when we start playing
+    wasWaiting = false;
+    debugCounter = 0;
     
     // Clear delay buffer (pre-filled with silence)
     for (auto& channel : delayBuffer)
@@ -675,11 +714,7 @@ void AudioEngine::processTranscription(const std::vector<float>& buffer, double 
                     continue;
                 
                 const char* tokenText = whisper_full_get_token_text(whisperCtx, i, j);
-                std::string word(tokenText);
-                
-                // Trim whitespace
-                word.erase(0, word.find_first_not_of(" \t\n\r"));
-                word.erase(word.find_last_not_of(" \t\n\r") + 1);
+                std::string word = cleanTranscriptText(tokenText);
                 
                 if (!word.empty())
                     segmentWords.push_back(word);
