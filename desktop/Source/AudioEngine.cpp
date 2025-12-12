@@ -74,7 +74,7 @@ AudioEngine::AudioEngine()
     cparams.use_gpu = false;  // CPU only for consistency
     cparams.dtw_token_timestamps = true;  // Enable DTW for better timestamp alignment
     cparams.dtw_aheads_preset = WHISPER_AHEADS_TINY_EN;  // Use tiny.en alignment preset
-    whisperCtx = whisper_init_from_file_with_params("Models/ggml-small.en.bin", cparams);
+    whisperCtx = whisper_init_from_file_with_params("Models/ggml-tiny.en.bin", cparams);
     
     if (whisperCtx == nullptr)
     {
@@ -820,8 +820,9 @@ void AudioEngine::processTranscription(const std::vector<float>& buffer, double 
                 int chunkEndPos = (int)captureTime;
                 int chunkStartPos = (chunkEndPos - (sampleRate * 5) + delayBufferSize) % delayBufferSize;
                 
-                double paddingBefore = 0.2;  // 200ms before word
-                double paddingAfter = 0.2;   // 200ms after word
+                // Tiny model tends to timestamp late - use asymmetric padding
+                double paddingBefore = 0.4;  // 400ms before word (catch early starts)
+                double paddingAfter = 0.1;   // 100ms after word (tight end)
                 
                 int startSample = (int)((wordSeg.start - paddingBefore) * sampleRate);
                 int endSample = (int)((wordSeg.end + paddingAfter) * sampleRate);
@@ -946,8 +947,9 @@ void AudioEngine::processTranscription(const std::vector<float>& buffer, double 
                     // Calculate position for multi-word profanity
                     int chunkEndPos = (int)captureTime;
                     int chunkStartPos = (chunkEndPos - (sampleRate * 5) + delayBufferSize) % delayBufferSize;
-                    double paddingBefore = 0.2;
-                    double paddingAfter = 0.2;
+                    // Tiny model asymmetric padding
+                    double paddingBefore = 0.4;  // 400ms before
+                    double paddingAfter = 0.1;   // 100ms after
                     
                     int startSample = (int)((wordSeg.start - paddingBefore) * sampleRate);
                     int endSample = (int)((nextWord.end + paddingAfter) * sampleRate);

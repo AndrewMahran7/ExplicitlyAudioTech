@@ -59,11 +59,11 @@ private:
         double whisperEnd,
         int sampleRate);
     
-    // Parameters (tuned for music with vocals)
+    // Parameters (tuned for music with vocals + tiny model late timestamps)
     static constexpr float ENERGY_THRESHOLD = 0.001f;     // Minimum energy for speech (lowered for music)
     static constexpr float ZC_THRESHOLD = 0.1f;           // Zero-crossing rate threshold (lowered)
     static constexpr int WINDOW_SIZE = 480;               // 10ms @ 48kHz
-    static constexpr int SEARCH_RADIUS = 24000;           // 0.5s search radius @ 48kHz
+    static constexpr int SEARCH_RADIUS = 38400;           // 0.8s search radius @ 48kHz (increased for tiny model)
     static constexpr float MIN_WORD_DURATION = 0.05f;     // 50ms minimum word length
     static constexpr float MAX_WORD_DURATION = 2.0f;      // 2s maximum word length
 };

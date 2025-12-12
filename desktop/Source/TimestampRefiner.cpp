@@ -144,6 +144,7 @@ std::pair<double, double> TimestampRefiner::searchForSpeech(
     }
     
     // Find the energy region closest to Whisper's timestamps
+    // For tiny model: prefer regions BEFORE Whisper's guess (it tends to timestamp late)
     int whisperCenter = (whisperStartSample + whisperEndSample) / 2;
     int closestDist = INT_MAX;
     std::pair<int, int> bestRegion = energyRegions[0];
@@ -152,6 +153,13 @@ std::pair<double, double> TimestampRefiner::searchForSpeech(
     {
         int regionCenter = (region.first + region.second) / 2;
         int dist = std::abs(regionCenter - whisperCenter);
+        
+        // Bias towards earlier regions (compensate for tiny model's late timestamps)
+        // If region is before Whisper center, reduce its distance by 20%
+        if (regionCenter < whisperCenter)
+        {
+            dist = (int)(dist * 0.8);  // Prefer earlier regions
+        }
         
         if (dist < closestDist)
         {

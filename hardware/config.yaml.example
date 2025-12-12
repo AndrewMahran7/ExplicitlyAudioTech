@@ -1,0 +1,60 @@
+# Explicitly Audio Configuration
+# Orange Pi Zero 3 Edition
+
+# Audio device configuration
+audio:
+  # ALSA device names
+  # Use "aplay -L" to list available devices
+  # hw:X,Y format: X=card number, Y=device number
+  input_device: "hw:1,0"
+  output_device: "hw:1,0"
+  
+  # Sample rate in Hz
+  sample_rate: 48000
+  
+  # Buffer size in frames (512 = ~10ms @ 48kHz)
+  # Lower = less latency, higher CPU usage
+  # Higher = more latency, lower CPU usage
+  buffer_size: 512
+  
+  # Number of periods (audio buffers)
+  periods: 4
+
+# Processing configuration
+processing:
+  # Path to Whisper model file
+  model_path: "/usr/share/explicitly/models/ggml-tiny.en.bin"
+  
+  # Path to profanity lexicon
+  profanity_lexicon: "/usr/share/explicitly/profanity_en.txt"
+  
+  # Censor mode: "reverse" or "mute"
+  censor_mode: "reverse"
+  
+  # Enable vocal bandpass filter (150-5000 Hz)
+  enable_vocal_filter: true
+  
+  # Enable timestamp refinement using energy analysis
+  enable_timestamp_refiner: true
+
+# HTTP API configuration
+api:
+  # Enable HTTP API server
+  enabled: true
+  
+  # Port to listen on
+  port: 8080
+  
+  # Bind address (0.0.0.0 = all interfaces, 127.0.0.1 = localhost only)
+  bind_address: "0.0.0.0"
+  
+  # Enable CORS headers (for web UI)
+  enable_cors: true
+
+# Logging configuration
+logging:
+  # Log level: "debug", "info", "warning", "error"
+  level: "info"
+  
+  # Log to syslog (journalctl)
+  use_syslog: true
