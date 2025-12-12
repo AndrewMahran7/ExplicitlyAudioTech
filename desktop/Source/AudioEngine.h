@@ -159,6 +159,11 @@ public:
 private:
     juce::AudioDeviceManager deviceManager;
     
+    // Configuration variables (easy tuning)
+    double chunkSeconds = 5.0;           // Audio chunk size to process (larger chunks = more context)
+    double overlapSeconds = 0.5;         // Overlap between chunks to catch boundary words
+    double initialDelaySeconds = 10.0;   // Initial buffering before playback starts
+    
     // Simple level tracking for Phase 1-2
     std::atomic<float> currentInputLevel {0.0f};
     

@@ -129,8 +129,8 @@ bool AudioEngine::start(const juce::String& inputDeviceName,
     }
     std::cout << "[Phase5] Using pre-loaded Whisper model" << std::endl;
     
-    // Allocate buffer for 5 seconds of audio
-    int audioBufferSize = sampleRate * 5;  // 5 seconds
+    // Allocate buffer for configurable chunk size
+    int audioBufferSize = (int)(sampleRate * chunkSeconds);
     audioBuffer.resize(audioBufferSize, 0.0f);
     processingBuffer.resize(audioBufferSize, 0.0f);
     bufferWritePos = 0;
@@ -140,11 +140,9 @@ bool AudioEngine::start(const juce::String& inputDeviceName,
     vocalFilter.initialize(sampleRate);
     std::cout << "[Phase5] Vocal filter initialized" << std::endl;
     
-    // Phase 6: Initialize delay buffer (25 seconds total capacity)
-    // 10-second initial delay: buffer 2 chunks, censor them, THEN start playback
-    // RTF 0.64-1.08x means 5s chunk takes 3-5.4s to process, so 10s gives safe margin
-    // Timeline: Load chunk 1 (5s) → process → Load chunk 2 (5s) → process → START PLAYBACK
-    delayBufferSize = (int)(sampleRate * 20);  // 20 second total capacity = 960,000 samples @ 48kHz
+    // Phase 6: Initialize delay buffer
+    // Delay buffer capacity should be larger than initial delay to provide safety margin
+    delayBufferSize = (int)(sampleRate * (initialDelaySeconds + 10.0));  // Initial delay + 10s safety margin
     delayBuffer.clear();
     delayBuffer.resize(2);  // Stereo
     for (auto& channel : delayBuffer)
@@ -156,7 +154,7 @@ bool AudioEngine::start(const juce::String& inputDeviceName,
     
     std::cout << "[Phase6] Delay buffer initialized: " << delayBufferSize << " samples total (" 
               << (delayBufferSize / sampleRate) << " seconds capacity)" << std::endl;
-    std::cout << "[Phase6] Will buffer 10 seconds before starting playback" << std::endl;
+    std::cout << "[Phase6] Will buffer " << initialDelaySeconds << " seconds before starting playback" << std::endl;
     std::cout << "[Phase6] Initial positions: writePos=" << delayWritePos 
               << ", readPos=" << delayReadPos << " (playback paused until buffered)" << std::endl;
     
@@ -241,11 +239,10 @@ void AudioEngine::setManualLyrics(const std::string& lyrics)
 double AudioEngine::getCurrentLatency() const
 {
     if (!isRunning)
-        return 0.0;
+        return -1.0;
     
-    // Latency is constant at 5 seconds (gap between input and output)
-    // What grows is the buffer capacity, not latency
-    return 5.0 * 1000.0;  // 5000ms
+    // Latency is constant at initialDelaySeconds (gap between input and output)
+    return initialDelaySeconds * 1000.0;
 }
 
 double AudioEngine::getCurrentBufferSize() const
@@ -290,7 +287,7 @@ void AudioEngine::audioDeviceAboutToStart(juce::AudioIODevice* device)
     delayReadPos = 0;
     delayWritePos = 0;
     
-    std::cout << "[Phase6] Buffering 10 seconds before playback starts..." << std::endl;
+    std::cout << "[Phase6] Buffering " << initialDelaySeconds << " seconds before playback starts..." << std::endl;
 }
 
 void AudioEngine::audioDeviceStopped()
@@ -345,38 +342,34 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const* inputChan
         }
     }
     
-    // Check if we've accumulated 5 seconds AND Whisper is ready
-    // Process 5 second chunks with no overlap for accurate timestamps
-    // KEY: Send next chunk as soon as Whisper finishes (not after 5 real-time seconds)
+    // Check if we've accumulated chunkSeconds of audio AND Whisper is ready
+    // Send chunks with configurable overlap between them
     transcriptionInterval += numSamples;
     
-    static int debugCounter = 0;
-    static bool wasWaiting = false;
-    
-    // Send to Whisper if: (1) we have 5s of audio, AND (2) Whisper is ready for more
-    if (transcriptionInterval >= sampleRate * 5.0 && !hasNewBuffer.load())
+    // Send to Whisper if: (1) we have chunkSeconds of audio, AND (2) Whisper is ready for more
+    if (transcriptionInterval >= (sampleRate * chunkSeconds) && !hasNewBuffer.load())
     {
         // Phase 5: Signal background thread (it's ready for next chunk)
         {
             std::lock_guard<std::mutex> lock(bufferMutex);
             
-            // Copy buffer for background processing (still 5 seconds of audio)
-            int samplesToProcess = std::min(bufferWritePos, (int)(sampleRate * 5));
+            // Copy buffer for background processing (chunkSeconds of audio)
+            int samplesToProcess = std::min(bufferWritePos, (int)(sampleRate * chunkSeconds));
             std::copy(audioBuffer.begin(), audioBuffer.begin() + samplesToProcess, 
                      processingBuffer.begin());
             
             // Store the CURRENT writePos when we send this chunk
             // This marks where the END of the chunk is in the delay buffer
-            // The chunk starts 5 seconds before this position
+            // The chunk starts chunkSeconds before this position
             bufferCaptureTime = (double)delayWritePos;  // Store END position of chunk
             
-            int chunkStartPos = (delayWritePos - (sampleRate * 5) + delayBufferSize) % delayBufferSize;
+            int chunkStartPos = (delayWritePos - (int)(sampleRate * chunkSeconds) + delayBufferSize) % delayBufferSize;
             std::cout << "[CAPTURE] Sending chunk to Whisper | chunkStart=" << chunkStartPos 
                       << ", chunkEnd(writePos)=" << delayWritePos << ", readPos=" << delayReadPos << std::endl;
             
             if (wasWaiting)
             {
-                std::cout << "[FLOW] Whisper finished! Sending next 5s chunk immediately (buffer growing)" << std::endl;
+                std::cout << "[FLOW] Whisper finished! Sending next chunk immediately (buffer growing)" << std::endl;
                 wasWaiting = false;
             }
             
@@ -388,12 +381,12 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const* inputChan
         bufferWritePos = 0;
         transcriptionInterval = 0;
     }
-    else if (transcriptionInterval >= sampleRate * 5.0 && hasNewBuffer.load())
+    else if (transcriptionInterval >= (sampleRate * chunkSeconds) && hasNewBuffer.load())
     {
-        // We have 5s of audio but Whisper is still busy - buffer is growing!
+        // We have chunkSeconds of audio but Whisper is still busy - buffer is growing!
         if (++debugCounter % 100 == 0)  // Log every ~1 second
         {
-            double extraTime = (transcriptionInterval - sampleRate * 5.0) / sampleRate;
+            double extraTime = (transcriptionInterval - (sampleRate * chunkSeconds)) / sampleRate;
             std::cout << "[FLOW] Waiting for Whisper to finish... (accumulated " 
                       << std::fixed << std::setprecision(2) << extraTime << "s extra audio)" << std::endl;
             wasWaiting = true;
@@ -454,12 +447,12 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const* inputChan
         bool canPlay;
         if (!playbackStarted.load())
         {
-            // Initial buffering: need 10 seconds to start
-            canPlay = (bufferSeconds >= 10.0);
+            // Initial buffering: need initialDelaySeconds to start
+            canPlay = (bufferSeconds >= initialDelaySeconds);
             if (canPlay)
             {
                 playbackStarted.store(true);
-                std::cout << "\n[Phase6] ✓ 10 SECONDS BUFFERED - PLAYBACK STARTING NOW!" << std::endl;
+                std::cout << "\n[Phase6] ✓ " << initialDelaySeconds << " SECONDS BUFFERED - PLAYBACK STARTING NOW!" << std::endl;
                 std::cout << "[Phase6] Censored audio will now be audible\n" << std::endl;
             }
         }
@@ -468,13 +461,16 @@ void AudioEngine::audioDeviceIOCallbackWithContext(const float* const* inputChan
             // Dynamic buffering: pause if too low, resume when recovered
             static bool wasPaused = false;
             
-            if (bufferSeconds < 8.0 && !wasPaused)
+            double pauseThreshold = initialDelaySeconds - 2.0;  // Pause at initialDelaySeconds - 2s
+            double resumeThreshold = initialDelaySeconds;       // Resume at initialDelaySeconds
+            
+            if (bufferSeconds < pauseThreshold && !wasPaused)
             {
                 wasPaused = true;
                 std::cout << "\n[Phase6] ⚠ Buffer dropped to " << std::fixed << std::setprecision(2) 
                          << bufferSeconds << "s - PAUSING playback to rebuild buffer\n" << std::endl;
             }
-            else if (bufferSeconds >= 10.0 && wasPaused)
+            else if (bufferSeconds >= resumeThreshold && wasPaused)
             {
                 wasPaused = false;
                 std::cout << "\n[Phase6] ✓ Buffer recovered to " << std::fixed << std::setprecision(2) 

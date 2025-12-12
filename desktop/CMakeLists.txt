@@ -72,17 +72,49 @@ target_link_libraries(ExplicitlyDesktop
 
 # Link Whisper library
 if(WIN32)
+    # Use CUDA-enabled whisper build for GPU acceleration
+    set(WHISPER_CUDA_BUILD "C:/whisper.cpp/build-cuda")
+    
     target_link_libraries(ExplicitlyDesktop PRIVATE
-        ${WHISPER_SDK_DIR}/lib/whisper.lib
+        ${WHISPER_CUDA_BUILD}/src/Release/whisper.lib
     )
     
-    # Copy Whisper DLLs to output directory
+    # Copy CUDA-enabled Whisper DLLs to output directory
     add_custom_command(TARGET ExplicitlyDesktop POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${WHISPER_SDK_DIR}/lib
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${WHISPER_CUDA_BUILD}/bin/Release/whisper.dll"
             $<TARGET_FILE_DIR:ExplicitlyDesktop>
-        COMMENT "Copying Whisper DLLs to output directory"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${WHISPER_CUDA_BUILD}/bin/Release/ggml.dll"
+            $<TARGET_FILE_DIR:ExplicitlyDesktop>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${WHISPER_CUDA_BUILD}/bin/Release/ggml-cuda.dll"
+            $<TARGET_FILE_DIR:ExplicitlyDesktop>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${WHISPER_CUDA_BUILD}/bin/Release/ggml-base.dll"
+            $<TARGET_FILE_DIR:ExplicitlyDesktop>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${WHISPER_CUDA_BUILD}/bin/Release/ggml-cpu.dll"
+            $<TARGET_FILE_DIR:ExplicitlyDesktop>
+        COMMENT "Copying CUDA-enabled Whisper DLLs to output directory"
     )
+    
+    # Copy CUDA runtime DLLs for GPU acceleration
+    set(CUDA_TOOLKIT_ROOT "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6")
+    if(EXISTS "${CUDA_TOOLKIT_ROOT}/bin")
+        add_custom_command(TARGET ExplicitlyDesktop POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CUDA_TOOLKIT_ROOT}/bin/cudart64_12.dll"
+                $<TARGET_FILE_DIR:ExplicitlyDesktop>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CUDA_TOOLKIT_ROOT}/bin/cublas64_12.dll"
+                $<TARGET_FILE_DIR:ExplicitlyDesktop>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CUDA_TOOLKIT_ROOT}/bin/cublasLt64_12.dll"
+                $<TARGET_FILE_DIR:ExplicitlyDesktop>
+            COMMENT "Copying CUDA runtime DLLs for GPU support"
+        )
+    endif()
 elseif(APPLE)
     target_link_libraries(ExplicitlyDesktop PRIVATE
         ${WHISPER_SDK_DIR}/lib/libwhisper.dylib
